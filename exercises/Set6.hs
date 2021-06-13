@@ -26,6 +26,7 @@ instance Eq Country where
 
 instance Ord Country where
   compare Finland Finland = EQ
+  compare Norway Switzerland = LT
   compare Finland Norway = LT
   compare Finland Switzerland = LT
   compare Norway Finland = GT
@@ -34,6 +35,14 @@ instance Ord Country where
   compare Switzerland Finland = GT
   compare Switzerland Norway = GT
   compare Switzerland Switzerland = EQ
+
+-- think the above is correct if you did the min def with compare
+-- a better way of doing it is how answer does it, with <= 
+-- instance Ord Country where
+--   Finland <= Norway       = True
+--   Finland <= Switzerland  = True
+--   Norway <= Switzerland   = True
+--   x <= y                  = x == y
 
 ------------------------------------------------------------------------------
 -- Ex 3: Implement an Eq instance for the type Name which contains a String.
@@ -49,9 +58,7 @@ data Name = Name String
   deriving Show
 
 instance Eq Name where
-  (Name a) == (Name b)
-    | (map toLower a) == (map toLower b) = True
-    | otherwise = False
+  (Name a) == (Name b) = (map toLower a) == (map toLower b)
 
 ------------------------------------------------------------------------------
 -- Ex 4: here is a list type parameterized over the type it contains.
@@ -66,11 +73,10 @@ data List a = Empty | LNode a (List a)
 
 instance Eq a => Eq (List a) where
   Empty == Empty = True
-  (LNode a b) == Empty = False
-  Empty == (LNode a b) = False
   (LNode x xs) == (LNode y ys)
     | x == y = True && xs == ys
     | otherwise = False
+  _ == _ = False
 
 ------------------------------------------------------------------------------
 -- Ex 5: below you'll find two datatypes, Egg and Milk. Implement a
@@ -229,14 +235,16 @@ instance Num RationalNumber where
 --   add zero [True,False]  ==>  [True,False]
 
 class Addable a where
-  add :: a -> Int -> Int
-  add x y = add x y
   zero :: a
-  zero 
+  add :: a -> a -> a
 
-instance Addable Int where
-  add v1 v2 = v1 + v2
+instance Addable Integer where
+  zero = 0
+  add x y = x + y
 
+instance Addable [a] where
+  zero = []
+  add x y = x ++ y
 
 ------------------------------------------------------------------------------
 -- Ex 12: cycling. Implement a type class Cycle that contains a
