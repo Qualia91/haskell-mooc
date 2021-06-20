@@ -40,9 +40,16 @@ expected =~? actual = actual ?~= expected
 infix 4 =~?
 infix 4 ?~=
 
+approximateListEq expected actual = expectation expected actual (length expected == length actual && and (zipWith (\e a -> abs (e-a) < 0.01) expected actual))
+
 hasElements expected actual = counterexample' ("  Expected elements (in any order): " ++ show expected
                                                ++ "\n  Was: " ++ show actual)
                               (sort expected == sort actual)
+
+hasElementsDuplicates expected actual =
+  counterexample' ("  Expected elements (in any order, duplicates allowed): " ++ show expected
+                    ++ "\n  Was: " ++ show actual)
+  (nub (sort expected) == nub (sort actual))
 
 was f actual = counterexample' ("  Was: "++show actual) (f actual)
 
@@ -113,7 +120,7 @@ capture input op = do
 
   str <- readFile opath
 
-  return (str,val)
+  return $ length str `seq` (str,val) -- try to avoid half-open handles
 
 runc string op = run (capture string op)
 
