@@ -26,7 +26,11 @@ import Mooc.Todo
 -- Otherwise return "Ok."
 
 workload :: Int -> Int -> String
-workload nExercises hoursPerExercise = todo
+workload nExercises hoursPerExercise 
+  | load > 100 = show "Holy moly!"
+  | load < 10 = show "Piece of cake"
+  | otherwise = show "ok"
+  where load = nExercises * hoursPerExercise
 
 ------------------------------------------------------------------------------
 -- Ex 2: Implement the function echo that builds a string like this:
@@ -39,7 +43,8 @@ workload nExercises hoursPerExercise = todo
 -- Hint: use recursion
 
 echo :: String -> String
-echo = todo
+echo [] = ""
+echo (x:xs) = (x:xs) ++ ", " ++ (echo xs)
 
 ------------------------------------------------------------------------------
 -- Ex 3: A country issues some banknotes. The banknotes have a serial
@@ -51,8 +56,12 @@ echo = todo
 -- Given a list of bank note serial numbers (strings), count how many
 -- are valid.
 
+-- countValid ["123456789", "111111111", "001212000", "0"]
+
 countValid :: [String] -> Int
-countValid = todo
+countValid ((_:_:x1:y1:x2:y2:xs):ys) | x1 == x2 && y1 == y2 = 1 + countValid ys
+countValid (y:ys) = countValid ys
+countValid [] = 0
 
 ------------------------------------------------------------------------------
 -- Ex 4: Find the first element that repeats two or more times _in a
@@ -64,7 +73,16 @@ countValid = todo
 --   repeated [1,2,1,2,3,3] ==> Just 3
 
 repeated :: Eq a => [a] -> Maybe a
-repeated = todo
+repeated (x:xs) = repeated' xs x 1
+
+repeated' :: Eq a => [a] -> a -> Int -> Maybe a
+repeated' [] last 3 = Just last
+repeated' [] last 2 = Just last
+repeated' [] _ _ = Nothing
+repeated' (x:xs) last count
+  | x == last = repeated' xs x (count + 1)
+  | count == 2 || count == 3 = Just last
+  | otherwise = repeated' xs x 1
 
 ------------------------------------------------------------------------------
 -- Ex 5: A laboratory has been collecting measurements. Some of the
@@ -86,7 +104,9 @@ repeated = todo
 --     ==> Left "no data"
 
 sumSuccess :: [Either String Int] -> Either String Int
-sumSuccess = todo
+sumSuccess measurements = case [m | Right m <- measurements] of
+  [] -> Left "no data"
+  sumData -> Right (sum sumData)
 
 ------------------------------------------------------------------------------
 -- Ex 6: A combination lock can either be open or closed. The lock
@@ -108,30 +128,37 @@ sumSuccess = todo
 --   isOpen (open "0000" (lock (changeCode "0000" (open "1234" aLock)))) ==> True
 --   isOpen (open "1234" (lock (changeCode "0000" (open "1234" aLock)))) ==> False
 
-data Lock = LockUndefined
+data Lock = Open String | Closed String
   deriving Show
 
 -- aLock should be a locked lock with the code "1234"
 aLock :: Lock
-aLock = todo
+aLock = Closed "1234"
 
 -- isOpen returns True if the lock is open
 isOpen :: Lock -> Bool
-isOpen = todo
+isOpen (Open _) = True
+isOpen _ = False
 
 -- open tries to open the lock with the given code. If the code is
 -- wrong, nothing happens.
 open :: String -> Lock -> Lock
-open = todo
+open code (Closed unlockCode)
+  | code == unlockCode = Open unlockCode
+  | otherwise = Closed unlockCode
+open _ lck = lck
 
 -- lock closes a lock. If the lock is already closed, nothing happens.
 lock :: Lock -> Lock
-lock = todo
+lock (Open unlockCode) = Closed unlockCode
+lock lck = lck
 
 -- changeCode changes the code of an open lock. If the lock is closed,
 -- nothing happens.
 changeCode :: String -> Lock -> Lock
-changeCode = todo
+changeCode newCode (Open oldCode) = Open newCode
+changeCode _ (Closed oldCode) = Closed oldCode
+
 
 ------------------------------------------------------------------------------
 -- Ex 7: Here's a type Text that just wraps a String. Implement an Eq
@@ -149,6 +176,15 @@ changeCode = todo
 data Text = Text String
   deriving Show
 
+removeWhitespace :: String -> String
+removeWhitespace [] = ""
+removeWhitespace (x:xs)
+  | x /= ' ' && x /= '\n' = [x] ++ removeWhitespace xs
+  | otherwise = removeWhitespace xs
+
+instance Eq Text where
+  (==) (Text a) (Text b) = (removeWhitespace a) == (removeWhitespace b)
+  
 
 ------------------------------------------------------------------------------
 -- Ex 8: We can represent functions or mappings as lists of pairs.
@@ -182,7 +218,10 @@ data Text = Text String
 --       ==> [("a",1),("b",2)]
 
 compose :: (Eq a, Eq b) => [(a,b)] -> [(b,c)] -> [(a,c)]
-compose = todo
+compose [] [] = []
+compose ((a1, b1):xs) ((a2, b2):ys) 
+  | b1 == a2 = (a1, b2) : (compose xs ys)
+  | otherwise = compose xs ys
 
 ------------------------------------------------------------------------------
 -- Ex 9: Reorder a list using an [(Int,Int)] mapping.
@@ -219,5 +258,19 @@ compose = todo
 
 type Permutation = [(Int,Int)]
 
+removeAtIndex :: Int -> [a] -> [a]
+removeAtIndex index list = case (splitAt index list) of
+  (fst, _:lst) -> fst ++ lst
+  (fst, []) -> fst
+
+replaceAtIndex :: Int -> a -> [a] -> [a]
+replaceAtIndex index val list = case (splitAt index list) of
+  (fst, _:lst) -> fst ++ [val] ++ lst
+  (fst, []) -> fst ++ [val]
+
 permute :: Permutation -> [a] -> [a]
-permute = todo
+permute permutation list = permute' permutation list list
+
+permute' :: Permutation -> [a] -> [a] -> [a]
+permute' ((index, order) : xs) list newList = permute' xs list (replaceAtIndex order (list !! index) newList)
+permute' [] list newList = newList
